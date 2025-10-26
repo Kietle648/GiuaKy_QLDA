@@ -67,7 +67,7 @@ class XacThucOtpView(APIView):
         if not result or not result[0]:
             return Response({"detail": "Mã OTP không hợp lệ hoặc đã hết hạn"}, status=status.HTTP_400_BAD_REQUEST)
 
-        # ✅ Lấy lại thông tin từ session và tạo user
+      
         user_data = request.session.get(email)
         if not user_data:
             return Response({"detail": "Không tìm thấy thông tin đăng ký"}, status=status.HTTP_400_BAD_REQUEST)

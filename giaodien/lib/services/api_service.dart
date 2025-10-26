@@ -103,10 +103,12 @@ class ApiService {
       body: jsonEncode({
         "old_password": oldPassword,
         "new_password": newPassword,
-        "confirm_password": confirmPassword,
+        "confirm_new_password": confirmPassword,
       }),
     );
   }
+
+  
 
 }
 

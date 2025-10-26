@@ -17,8 +17,16 @@ class ChangePasswordScreenState extends State<ChangePasswordScreen> {
   final _newPasswordController = TextEditingController();
   final _confirmNewPasswordController = TextEditingController();
   bool _isLoading = false;
+  bool _obscureOldPassword = true;
+  bool _obscureNewPassword = true;
+  bool _obscureConfirmPassword = true;
 
   Future<void> _changePassword() async {
+    if (_newPasswordController.text != _confirmNewPasswordController.text) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Mật khẩu mới không khớp')));
+      return;
+    }
+
     setState(() => _isLoading = true);
     try {
       final token = Provider.of<AuthProvider>(context, listen: false).accessToken;
@@ -33,7 +41,7 @@ class ChangePasswordScreenState extends State<ChangePasswordScreen> {
         _oldPasswordController.text,
         _newPasswordController.text,
         _confirmNewPasswordController.text,
-        token,  // Thêm token nếu ApiService cần (chỉnh ApiService nếu chưa có)
+        token,
       );
       if (response.statusCode == 200) {
         if (mounted) {
@@ -60,16 +68,82 @@ class ChangePasswordScreenState extends State<ChangePasswordScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Đổi Mật Khẩu')),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          children: [
-            TextField(controller: _oldPasswordController, obscureText: true, decoration: const InputDecoration(labelText: 'Mật Khẩu Cũ')),
-            TextField(controller: _newPasswordController, obscureText: true, decoration: const InputDecoration(labelText: 'Mật Khẩu Mới')),
-            TextField(controller: _confirmNewPasswordController, obscureText: true, decoration: const InputDecoration(labelText: 'Xác Nhận Mật Khẩu Mới')),
-            _isLoading ? const CircularProgressIndicator() : ElevatedButton(onPressed: _changePassword, child: const Text('Đổi Mật Khẩu')),
-          ],
+      appBar: AppBar(
+        title: const Text('Đổi Mật Khẩu'),
+        backgroundColor: Colors.black,
+        foregroundColor: Colors.orange,
+      ),
+      body: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const SizedBox(height: 48),
+              TextField(
+                controller: _oldPasswordController,
+                obscureText: _obscureOldPassword,
+                decoration: InputDecoration(
+                  labelText: 'Mật Khẩu Cũ',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  filled: true,
+                  fillColor: Colors.grey[900],
+                  suffixIcon: IconButton(
+                    icon: Icon(_obscureOldPassword ? Icons.visibility_off : Icons.visibility),
+                    onPressed: () => setState(() => _obscureOldPassword = !_obscureOldPassword),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: _newPasswordController,
+                obscureText: _obscureNewPassword,
+                decoration: InputDecoration(
+                  labelText: 'Mật Khẩu Mới',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  filled: true,
+                  fillColor: Colors.grey[900],
+                  suffixIcon: IconButton(
+                    icon: Icon(_obscureNewPassword ? Icons.visibility_off : Icons.visibility),
+                    onPressed: () => setState(() => _obscureNewPassword = !_obscureNewPassword),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: _confirmNewPasswordController,
+                obscureText: _obscureConfirmPassword,
+                decoration: InputDecoration(
+                  labelText: 'Xác Nhận Mật Khẩu Mới',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  filled: true,
+                  fillColor: Colors.grey[900],
+                  suffixIcon: IconButton(
+                    icon: Icon(_obscureConfirmPassword ? Icons.visibility_off : Icons.visibility),
+                    onPressed: () => setState(() => _obscureConfirmPassword = !_obscureConfirmPassword),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 24),
+              _isLoading
+                  ? const Center(child: CircularProgressIndicator())
+                  : ElevatedButton(
+                      onPressed: _changePassword,
+                      style: ElevatedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      ),
+                      child: const Text('Đổi Mật Khẩu', style: TextStyle(fontSize: 16)),
+                    ),
+            ],
+          ),
         ),
       ),
     );

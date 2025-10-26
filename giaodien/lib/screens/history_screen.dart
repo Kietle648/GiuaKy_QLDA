@@ -31,7 +31,7 @@ class HistoryScreenState extends State<HistoryScreen> {
       final response = await ApiService.getHistory(token);
       if (response.statusCode == 200) {
         setState(() {
-          _history = jsonDecode(response.body);  // Giả sử backend trả list JSON
+          _history = jsonDecode(response.body);
         });
       }
     } catch (e) {
@@ -52,7 +52,7 @@ class HistoryScreenState extends State<HistoryScreen> {
 
       final response = await ApiService.deleteHistory(id, token);
       if (response.statusCode == 200) {
-        _fetchHistory();  // Refresh list
+        _fetchHistory();
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Xóa thành công')));
         }
@@ -66,24 +66,57 @@ class HistoryScreenState extends State<HistoryScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Lịch Sử Phân Tích')),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : ListView.builder(
-              itemCount: _history.length,
-              itemBuilder: (context, index) {
-                final item = _history[index];
-                return ListTile(
-                  title: Text(item['date'] ?? 'Ngày không xác định'),  // Giả sử fields từ backend
-                  subtitle: Text(item['result'] ?? ''),
-                  trailing: IconButton(
-                    icon: const Icon(Icons.delete),
-                    onPressed: () => _deleteItem(item['id']),
-                  ),
-                );
-              },
-            ),
+    return Column(
+      children: [
+        Container(
+          color: Colors.black, // Khung màu đen cho tiêu đề như bottom bar
+          padding: const EdgeInsets.all(16),
+          child: const Text(
+            'Lịch Sử Phân Tích',
+            style: TextStyle(fontSize: 20, color: Colors.orange, fontWeight: FontWeight.bold),
+          ),
+        ),
+        Expanded(
+          child: _isLoading
+              ? const Center(child: CircularProgressIndicator())
+              : _history.isEmpty
+                  ? const Center(child: Text('Chưa có lịch sử', style: TextStyle(color: Colors.white)))
+                  : ListView.builder(
+                      itemCount: _history.length,
+                      itemBuilder: (context, index) {
+                        final item = _history[index];
+                        return Card(
+                          color: Colors.grey[900],
+                          margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                          child: ListTile(
+                            title: Text(item['date'] ?? 'Ngày không xác định', style: const TextStyle(color: Colors.white)),
+                            subtitle: Text(item['result'] ?? '', style: const TextStyle(color: Colors.grey)),
+                            trailing: IconButton(
+                              icon: const Icon(Icons.delete, color: Colors.red),
+                              onPressed: () {
+                                showDialog(
+                                  context: context,
+                                  builder: (context) => AlertDialog(
+                                    title: const Text('Xác nhận xóa'),
+                                    content: const Text('Bạn có chắc muốn xóa mục này?'),
+                                    actions: [
+                                      TextButton(onPressed: () => Navigator.pop(context), child: const Text('Hủy')),
+                                      TextButton(onPressed: () {
+                                        Navigator.pop(context);
+                                        _deleteItem(item['id']);
+                                      }, child: const Text('Xóa', style: TextStyle(color: Colors.red))),
+                                    ],
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+        ),
+      ],
     );
   }
 }
