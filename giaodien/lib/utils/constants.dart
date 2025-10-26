@@ -1,4 +1,4 @@
-final baseUrl = 'http://10.150.166.217:8000';
+final baseUrl = 'http://10.150.166.173:8000';
 const String registerEndpoint = 'nguoi-dung/dang-ky/';
 const String otpEndpoint = 'nguoi-dung/xac-thuc-otp/';
 const String loginEndpoint = 'nguoi-dung/dang-nhap/';

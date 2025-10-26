@@ -37,6 +37,8 @@ dependencies:
   shared_preferences: ^2.3.2  # Lưu token JWT locally
   provider: ^6.1.2          # State management đơn giản
   flutter_secure_storage: ^9.2.2
+  flutter_cache_manager: ^3.4.1
+  cached_network_image: ^3.3.1
 
 dev_dependencies:
   flutter_test:

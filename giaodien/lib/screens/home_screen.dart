@@ -5,7 +5,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import '../services/api_service.dart';
-import '../models/analysis_result.dart';
+import '../utils/constants.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -16,7 +16,6 @@ class HomePage extends StatefulWidget {
 
 class HomePageState extends State<HomePage> {
   File? _image;
-  List<AnalysisResult> _results = [];
   bool _isLoading = false;
 
   Future<void> _pickAndAnalyzeImage(ImageSource source) async {
@@ -34,34 +33,34 @@ class HomePageState extends State<HomePage> {
       _isLoading = true;
     });
 
-    try {
-      if (token == null) {
-        if (!mounted) return;
-        scaffold.showSnackBar(
-          const SnackBar(content: Text('Vui lòng đăng nhập')),
-        );
-        return;
-      }
+    if (token == null) {
+      scaffold.showSnackBar(const SnackBar(content: Text('Vui lòng đăng nhập')));
+      return;
+    }
 
+    try {
       final response = await ApiService.analyzeImage(_image!, token);
 
       if (!mounted) return;
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        setState(() {
-          _results = (data['results'] as List)
-              .map((e) => AnalysisResult.fromJson(e))
-              .toList();
-        });
-        scaffold.showSnackBar(
-          const SnackBar(content: Text('Phân tích thành công')),
-        );
+        final imagePath = data['duong_dan_anh_danh_dau'] as String?;
+
+        if (imagePath == null || imagePath.isEmpty) {
+          scaffold.showSnackBar(const SnackBar(content: Text('Không có ảnh kết quả')));
+          return;
+        }
+
+        // Tạo URL với cache buster MẠNH + timestamp microsecond
+        final uniqueUrl =
+            '$baseUrl/media/$imagePath?v=${DateTime.now().microsecondsSinceEpoch}';
+
+        _showResultDialog(uniqueUrl);
       } else {
         scaffold.showSnackBar(SnackBar(content: Text('Lỗi: ${response.body}')));
       }
     } catch (e) {
-      if (!mounted) return;
       scaffold.showSnackBar(SnackBar(content: Text('Lỗi: $e')));
     } finally {
       if (mounted) {
@@ -70,13 +69,70 @@ class HomePageState extends State<HomePage> {
     }
   }
 
+  void _showResultDialog(String imageUrl) {
+    // Đóng dialog cũ nếu có
+    if (Navigator.of(context).canPop()) {
+      Navigator.of(context).pop();
+    }
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => AlertDialog(
+        title: const Text("Kết quả phân tích"),
+        content: SizedBox(
+          width: 300,
+          height: 300,
+          child: Image.network(
+            imageUrl,
+            key: ValueKey(imageUrl), // Ép rebuild hoàn toàn
+            fit: BoxFit.contain,
+            loadingBuilder: (context, child, loadingProgress) {
+              if (loadingProgress == null) return child;
+              return const Center(child: CircularProgressIndicator());
+            },
+            errorBuilder: (context, error, stackTrace) {
+              return Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.error, color: Colors.red),
+                  const Text('Không tải được ảnh'),
+                  TextButton(
+                    onPressed: () {
+                      Navigator.pop(context);
+                      _showResultDialog(imageUrl); // Thử lại
+                    },
+                    child: const Text("Thử lại"),
+                  ),
+                ],
+              );
+            },
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text("Đóng"),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          if (_image != null) Image.file(_image!, height: 200),
+          if (_image != null)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 16),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: Image.file(_image!, height: 200, fit: BoxFit.cover),
+              ),
+            ),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
@@ -94,24 +150,8 @@ class HomePageState extends State<HomePage> {
           ),
           if (_isLoading)
             const Padding(
-              padding: EdgeInsets.only(top: 12),
+              padding: EdgeInsets.only(top: 16),
               child: CircularProgressIndicator(),
-            ),
-          if (_results.isNotEmpty)
-            Expanded(
-              child: ListView.builder(
-                itemCount: _results.length,
-                itemBuilder: (context, index) {
-                  final result = _results[index];
-                  return Card(
-                    color: Colors.grey[900],
-                    child: ListTile(
-                      title: Text(result.objectName),
-                      subtitle: Text('Confidence: ${result.confidence}'),
-                    ),
-                  );
-                },
-              ),
             ),
         ],
       ),

@@ -13,7 +13,7 @@ class HistoryScreen extends StatefulWidget {
 }
 
 class HistoryScreenState extends State<HistoryScreen> {
-  List<dynamic> _history = [];
+  List<Map<String, dynamic>> _history = [];
   bool _isLoading = false;
 
   @override
@@ -30,8 +30,9 @@ class HistoryScreenState extends State<HistoryScreen> {
 
       final response = await ApiService.getHistory(token);
       if (response.statusCode == 200) {
+        final List<dynamic> jsonList = jsonDecode(response.body);
         setState(() {
-          _history = jsonDecode(response.body);
+          _history = jsonList.map((item) => item as Map<String, dynamic>).toList();
         });
       }
     } catch (e) {

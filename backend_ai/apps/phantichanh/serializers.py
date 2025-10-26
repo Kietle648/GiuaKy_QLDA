@@ -1,6 +1,6 @@
-# apps/phantichanh/serializers.py
+
 from rest_framework import serializers
 
 class UploadImageSerializer(serializers.Serializer):
-    file = serializers.ImageField()
+    file = serializers.ImageField(required=True)
     mota = serializers.CharField(required=False, allow_blank=True)
